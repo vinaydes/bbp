@@ -98,7 +98,13 @@ class accumulator {
         op[i] = IType(temp / denominator);
         numerator = IType(temp - op[i] * denominator);
       }
-      IType carry = 0;
+      IType carry;
+      // Rounding logic to improve accuracy with same precision
+      if (numerator >= denominator/2) {
+        carry = 1;
+      } else {
+        carry = 0;
+      }
       for (size_t i = WORDS; i > 0; i--) {
         w[i - 1] += (op[i - 1]);
 
