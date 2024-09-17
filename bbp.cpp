@@ -43,6 +43,8 @@ class accumulator {
   public:
     IType w[WORDS];
     constexpr static int i_width = sizeof(IType) * 8;
+    constexpr static IType ITYPE_MAX = ~IType(0);
+
     mpf_t r;
 
     accumulator() {
@@ -136,6 +138,20 @@ class accumulator {
       adjust();
     }
 
+    void neg() {
+      for (size_t i = WORDS; i > 0; i--) {
+          w[i - 1] = ~w[i - 1];
+      }
+      w[WORDS - 1]++;
+
+      mpf_t one;
+      mpf_init(one);
+      mpf_set_ui(one, 1);
+      mpf_sub(r, one, r);
+      mpf_clear(one);
+    }
+
+
     void rshift(int n) {
       if (n < 0) {
         printf("Negative amount for shift is not allowed\n");
@@ -218,9 +234,9 @@ class accumulator {
       mpf_t diff;
       mpf_init(diff);
       mpf_sub(diff, r, s);
-      mpf_out_str(stdout, 10, 50, r);
+      mpf_out_str(stdout, 10, 50, s);
       printf("\t");
-      mpf_out_str(stdout, 10, 5, diff);
+      mpf_out_str(stdout, 10, 50, diff);
       printf("\n");
       mpf_clear(diff);
       mpf_clear(s);
@@ -279,7 +295,7 @@ class accumulator {
     }
 };
 
-using acc_type = accumulator<uint32_t, uint64_t, 4>;
+using acc_type = accumulator<uint32_t, uint64_t, 2>;
 
 // Calculate fractional part of 16^d * S_j where 
 // S_j = sum ( 1 / ( (16^k) * (8*k + j) ) ) for k = 0 to inf
@@ -310,20 +326,22 @@ acc_type calculate_sum(uint32_t d, uint32_t j) {
 int main()
 {
   acc_type pi_16d;
-  acc_type term;
+  acc_type S1, S4, S5, S6;
   uint32_t d = 1000000;
-  term = calculate_sum(d, 6);
-  term.print();
+  S1 = calculate_sum(d, 1);
+  S1.lshift(2);
+  S4 = calculate_sum(d, 4);
+  S4.lshift(1);
+  S4.neg();
+  S5 = calculate_sum(d, 5);
+  S5.neg();
+  S6 = calculate_sum(d, 6);
+  S6.neg();
 
-
-  term.decimal_expansion();
-  /*acc_type term1;
-
-  term1.add(uint32_t(1), 8000065);
-  term1.print();
-  term1.rshift(32);
-  term1.print();*/
-  //term.decimal_expansion();
+  S1.add(S4);
+  S1.add(S5);
+  S1.add(S6);
+  S1.print();
 
   return 0;
 }
